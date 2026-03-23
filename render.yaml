@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: zrc-api
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: RESEND_API_KEY
+        sync: false
+      - key: NOTIFY_EMAIL
+        value: info@zenrisecapital.com
+      - key: FROM_EMAIL
+        value: "ZRC Platform <noreply@zenrisecapital.com>"
+      - key: FRONTEND_URL
+        value: https://zenrisecapital.com
+      - key: NODE_VERSION
+        value: 20
