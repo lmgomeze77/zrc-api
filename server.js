@@ -11,7 +11,7 @@ const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || "info@zenrisecapital.com";
 const FROM_EMAIL = process.env.FROM_EMAIL || "ZRC Platform <noreply@zenrisecapital.com>";
 
 // ─── MORNING INTELLIGENCE ROUTES ───
-const subscribeRoute    = require("./routes/subscribe");
+const apexAiRoute=require("./routes/apex-ai");const subscribeRoute    = require("./routes/subscribe");
 const sendBriefingRoute = require("./routes/send-briefing");
 const unsubscribeRoute  = require("./routes/unsubscribe");
 
@@ -21,7 +21,7 @@ app.use(cors({ origin: ["https://zenrisecapital.com","https://www.zenrisecapital
 app.get("/", (req, res) => res.json({ status: "ok", service: "ZRC API", version: "1.0.0" }));
 app.get("/health", (req, res) => res.json({ status: "healthy", timestamp: new Date().toISOString() }));
 
-app.use("/api/subscribe",     subscribeRoute);
+app.use("/apex/ai",apexAiRoute);app.use("/api/subscribe",     subscribeRoute);
 app.use("/api/send-briefing", sendBriefingRoute);
 app.use("/api/unsubscribe",   unsubscribeRoute);
 
