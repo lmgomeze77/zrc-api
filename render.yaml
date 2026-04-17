@@ -1,4 +1,4 @@
-services:
+﻿services:
   - type: web
     name: zrc-api
     runtime: node
@@ -8,10 +8,10 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: NOTIFY_EMAIL
-        value: info@zenrisecapital.com
+        value: info@zenithrisecapital.com
       - key: FROM_EMAIL
-        value: "ZRC Platform <noreply@zenrisecapital.com>"
+        value: "ZRC Platform <noreply@zenithrisecapital.com>"
       - key: FRONTEND_URL
-        value: https://zenrisecapital.com
+        value: https://zenithrisecapital.com
       - key: NODE_VERSION
         value: 20
