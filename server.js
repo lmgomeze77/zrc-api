@@ -12,6 +12,7 @@ const FROM_EMAIL = process.env.FROM_EMAIL || "ZRC Platform <noreply@zenithriseca
 
 // â”€â”€â”€ MORNING INTELLIGENCE ROUTES â”€â”€â”€
 const apexAiRoute=require("./routes/apex-ai");const subscribeRoute    = require("./routes/subscribe");
+const leadRoute = require("./routes/lead");
 const sendBriefingRoute = require("./routes/send-briefing");
 const unsubscribeRoute  = require("./routes/unsubscribe");
 
@@ -24,6 +25,7 @@ app.get("/health", (req, res) => res.json({ status: "healthy", timestamp: new Da
 app.use("/apex/ai",apexAiRoute);app.use("/api/subscribe",     subscribeRoute);
 app.use("/api/send-briefing", sendBriefingRoute);
 app.use("/api/unsubscribe",   unsubscribeRoute);
+app.use("/api/lead", leadRoute);
 
 function buildEmailHTML({ type, data }) {
   const fields = Object.entries(data).filter(([_, v]) => v && v.trim()).map(([k, v]) => `<tr><td style="padding:8px 16px;font-family:monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;vertical-align:top;width:140px;">${k}</td><td style="padding:8px 16px;font-family:sans-serif;font-size:14px;color:#E8E8E8;">${v}</td></tr>`).join("");
