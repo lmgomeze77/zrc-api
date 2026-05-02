@@ -32,7 +32,7 @@ router.post("/", async (req, res) => {
     const notifyResult = await resend.emails.send({
       from: FROM_EMAIL,
       to: [NOTIFY_EMAIL],
-      replyTo: email,
+      reply_to: email,
       subject: `🔔 Lead Visor — ${sector}${rcClean ? ` · RC ${rcClean.substring(0, 8)}…` : ""}`,
       html: notifyEmailHTML({ email, sector, source: sourceClean, rc: rcClean, parcela: parcelaClean }),
     });
@@ -76,52 +76,73 @@ function escapeHTML(s) {
 // ============================================================
 function notifyEmailHTML({ email, sector, source, rc, parcela }) {
   const parcelaRows = parcela ? `
-    ${parcela.municipio ? `<tr><td style="padding:8px 16px;font-family:monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;width:140px;">Municipio</td><td style="padding:8px 16px;font-family:sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(parcela.municipio)}, ${escapeHTML(parcela.provincia || "")}</td></tr>` : ""}
-    ${parcela.uso ? `<tr><td style="padding:8px 16px;font-family:monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Uso</td><td style="padding:8px 16px;font-family:sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(parcela.uso)}</td></tr>` : ""}
-    ${parcela.superficie ? `<tr><td style="padding:8px 16px;font-family:monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Superficie</td><td style="padding:8px 16px;font-family:sans-serif;font-size:14px;color:#E8E8E8;">${parcela.superficie.toLocaleString("es-ES")} m²</td></tr>` : ""}
+    ${parcela.municipio ? `<tr><td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;width:140px;">Municipio</td><td style="padding:8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(parcela.municipio)}, ${escapeHTML(parcela.provincia || "")}</td></tr>` : ""}
+    ${parcela.uso ? `<tr><td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Uso</td><td style="padding:8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(parcela.uso)}</td></tr>` : ""}
+    ${parcela.superficie ? `<tr><td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Superficie</td><td style="padding:8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(Number(parcela.superficie).toLocaleString("es-ES"))} m²</td></tr>` : ""}
   ` : "";
 
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#09090B;color:#FAFAFA;font-family:'Helvetica Neue',sans-serif;">
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZRC Labs — Nuevo lead Visor</title>
+</head>
+<body style="margin:0;padding:0;background:#09090B;color:#FAFAFA;font-family:Helvetica,Arial,sans-serif;">
   <div style="max-width:600px;margin:0 auto;padding:40px 24px;">
     <div style="border-bottom:1px solid rgba(212,168,83,0.3);padding-bottom:24px;margin-bottom:32px;">
-      <div style="font-family:Georgia,serif;font-size:18px;color:#FAFAFA;letter-spacing:0.1em;">◈ ZENITH RISE CAPITAL</div>
-      <div style="font-family:monospace;font-size:11px;color:#D4A853;letter-spacing:0.15em;margin-top:8px;">ZRC LABS · NEW VISOR LEAD</div>
+      <div style="font-family:Georgia,'Cormorant Garamond',serif;font-size:18px;color:#FAFAFA;letter-spacing:0.1em;font-weight:600;">
+        ZENITH RISE CAPITAL
+      </div>
+      <div style="height:1px;background:#D4A853;width:48px;margin:12px 0;"></div>
+      <div style="font-family:Consolas,monospace;font-size:11px;color:#D4A853;letter-spacing:0.15em;">
+        ZRC LABS · NEW VISOR LEAD
+      </div>
     </div>
     <table style="width:100%;border-collapse:collapse;background:#111113;border:1px solid #27272A;">
       <tr>
-        <td style="padding:8px 16px;font-family:monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;width:140px;">Email</td>
-        <td style="padding:8px 16px;font-family:sans-serif;font-size:14px;color:#E8E8E8;"><strong style="color:#D4A853;">${escapeHTML(email)}</strong></td>
+        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;width:140px;">Email</td>
+        <td style="padding:8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#E8E8E8;"><strong style="color:#D4A853;">${escapeHTML(email)}</strong></td>
       </tr>
       <tr>
-        <td style="padding:8px 16px;font-family:monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Sector</td>
-        <td style="padding:8px 16px;font-family:sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(sector)}</td>
+        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Sector</td>
+        <td style="padding:8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(sector)}</td>
       </tr>
       <tr>
-        <td style="padding:8px 16px;font-family:monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Fuente</td>
-        <td style="padding:8px 16px;font-family:monospace;font-size:12px;color:#E8E8E8;">${escapeHTML(source)}</td>
+        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Fuente</td>
+        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#E8E8E8;">${escapeHTML(source)}</td>
       </tr>
       ${rc ? `<tr>
-        <td style="padding:8px 16px;font-family:monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Última RC</td>
-        <td style="padding:8px 16px;font-family:monospace;font-size:12px;color:#E8E8E8;">${escapeHTML(rc)}</td>
+        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Última RC</td>
+        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#E8E8E8;">${escapeHTML(rc)}</td>
       </tr>` : ""}
       ${parcelaRows}
     </table>
-    <div style="margin-top:24px;font-family:monospace;font-size:10px;color:#71717A;">Received: ${new Date().toISOString()} UTC · Reply directly to contact the lead</div>
+    <div style="margin-top:24px;font-family:Consolas,monospace;font-size:10px;color:#71717A;">
+      Received: ${new Date().toISOString()} UTC · Reply directly to contact the lead
+    </div>
   </div>
-</body></html>`;
+</body>
+</html>`;
 }
 
 function welcomeEmailHTML({ email, sector }) {
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#F5F3EE;color:#1A1A1A;font-family:'Helvetica Neue',sans-serif;">
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenith Rise Capital — Bienvenido al Visor</title>
+</head>
+<body style="margin:0;padding:0;background:#F5F3EE;color:#1A1A1A;font-family:Helvetica,Arial,sans-serif;">
   <div style="max-width:560px;margin:40px auto;background:#FFFFFF;padding:40px;border-top:3px solid #D4A853;">
-    <div style="font-family:monospace;font-size:10px;letter-spacing:0.2em;color:#D4A853;text-transform:uppercase;margin-bottom:16px;">
+    <div style="font-family:Consolas,monospace;font-size:10px;letter-spacing:0.2em;color:#D4A853;text-transform:uppercase;margin-bottom:16px;font-weight:600;">
       ZENITH RISE CAPITAL · LABS
     </div>
-    <h1 style="font-family:Georgia,serif;font-weight:400;font-size:28px;margin:0 0 16px;color:#0B1F3F;">
+    <div style="height:1px;background:#D4A853;width:48px;margin-bottom:24px;"></div>
+    <h1 style="font-family:Georgia,'Cormorant Garamond',serif;font-weight:400;font-size:28px;margin:0 0 16px;color:#0B1F3F;">
       Bienvenido al Visor Inmobiliario
     </h1>
     <p style="font-size:15px;line-height:1.7;color:#404040;margin:0 0 16px;">
@@ -133,7 +154,7 @@ function welcomeEmailHTML({ email, sector }) {
       También recibirás cada mes el informe <em>Zenrise State</em> con
       indicadores macro y señales de mercado extraídas de nuestras herramientas.
     </p>
-    <a href="https://zenithrisecapital.com" style="display:inline-block;padding:12px 28px;background:#0B1F3F;color:#FFFFFF;text-decoration:none;font-family:monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;">
+    <a href="https://zenithrisecapital.com" style="display:inline-block;padding:12px 28px;background:#0B1F3F;color:#FFFFFF;text-decoration:none;font-family:Consolas,monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;">
       Volver al Visor
     </a>
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E5DC;font-size:12px;color:#71717A;line-height:1.6;">
@@ -141,7 +162,8 @@ function welcomeEmailHTML({ email, sector }) {
       Madrid · zenithrisecapital.com
     </div>
   </div>
-</body></html>`;
+</body>
+</html>`;
 }
 
 module.exports = router;
