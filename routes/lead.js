@@ -1,128 +1,88 @@
 // routes/lead.js
-// ZRC API · Endpoint /api/lead — captura de leads del Visor Inmobiliario
+// ZRC API - Endpoint /api/lead - Visor Inmobiliario lead capture
 
 const express = require("express");
 const { Resend } = require("resend");
 const router = express.Router();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || "info@zenithrisecapital.com";
-const FROM_EMAIL = process.env.FROM_EMAIL || "ZRC Platform <noreply@zenithrisecapital.com>";
+const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL;
+const FROM_EMAIL   = process.env.FROM_EMAIL;
 
 // ============================================================
-// POST /api/lead
+// SHARED DESIGN TOKENS
 // ============================================================
-router.post("/", async (req, res) => {
-  try {
-    const { email, sector, source, rc, parcela } = req.body;
-
-    // Validación
-    if (!email || !isValidEmail(email)) {
-      return res.status(400).json({ error: "Email inválido" });
-    }
-    if (!sector || sector.length > 100) {
-      return res.status(400).json({ error: "Sector inválido" });
-    }
-
-    const sourceClean = (source || "visor-inmobiliario").substring(0, 50);
-    const rcClean = rc ? String(rc).substring(0, 20) : null;
-    const parcelaClean = parcela && typeof parcela === "object" ? parcela : null;
-
-    // Email notify a info@
-    const notifyResult = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [NOTIFY_EMAIL],
-      reply_to: email,
-      subject: `🔔 Lead Visor — ${sector}${rcClean ? ` · RC ${rcClean.substring(0, 8)}…` : ""}`,
-      html: notifyEmailHTML({ email, sector, source: sourceClean, rc: rcClean, parcela: parcelaClean }),
-    });
-
-    if (notifyResult.error) {
-      console.error("Resend notify error:", notifyResult.error);
-      return res.status(500).json({ error: "Failed to send notification" });
-    }
-
-    // Email bienvenida al lead
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [email],
-      subject: "Acceso al Visor Inmobiliario · ZRC Labs",
-      html: welcomeEmailHTML({ email, sector }),
-    });
-
-    console.log(`✓ Visor lead: ${email} (${sector})${rcClean ? ` RC=${rcClean}` : ""} [${notifyResult.data?.id}]`);
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Lead endpoint error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+const GOLD  = "#C9A84C";
+const NAVY  = "#0A1628";
+const NAVY2 = "#0E1C34";
+const EMAIL_FONTS = "https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400&display=swap";
 
 // ============================================================
 // HELPERS
 // ============================================================
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+function isValidEmail(e) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase());
 }
 
-function escapeHTML(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  })[c]);
+function esc(str) {
+  if (!str) return "-";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&#39;")
+    .replace(/"/g, "&quot;");
 }
 
 // ============================================================
 // EMAIL TEMPLATES
 // ============================================================
+
 function notifyEmailHTML({ email, sector, source, rc, parcela }) {
-  const parcelaRows = parcela ? `
-    ${parcela.municipio ? `<tr><td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;width:140px;">Municipio</td><td style="padding:8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(parcela.municipio)}, ${escapeHTML(parcela.provincia || "")}</td></tr>` : ""}
-    ${parcela.uso ? `<tr><td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Uso</td><td style="padding:8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(parcela.uso)}</td></tr>` : ""}
-    ${parcela.superficie ? `<tr><td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Superficie</td><td style="padding:8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(Number(parcela.superficie).toLocaleString("es-ES"))} m²</td></tr>` : ""}
-  ` : "";
+  const rcClean = rc ? String(rc).replace(/[^a-zA-Z0-9\-]/g, "").substring(0, 12) : null;
+
+  const rows = [
+    ["EMAIL",   esc(email)],
+    ["SECTOR",  esc(sector)],
+    ["FUENTE",  esc(source)],
+    ["RC",      rcClean ? esc(rcClean) : "-"],
+    ["PARCELA", esc(parcela)],
+  ];
+
+  const rowsHtml = rows.map(([label, value]) => `
+    <tr>
+      <td style="padding:10px 16px;font-family:'Cormorant SC',serif;font-size:9px;letter-spacing:.25em;color:#8899AA;text-transform:uppercase;width:110px;vertical-align:top;border-bottom:1px solid #1A2A40;">${label}</td>
+      <td style="padding:10px 16px;font-size:16px;color:#E8E0CC;line-height:1.6;border-bottom:1px solid #1A2A40;">${value}</td>
+    </tr>
+  `).join("");
 
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZRC Labs — Nuevo lead Visor</title>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZRC - Lead Visor</title>
+  <link href="${EMAIL_FONTS}" rel="stylesheet" />
 </head>
-<body style="margin:0;padding:0;background:#09090B;color:#FAFAFA;font-family:Helvetica,Arial,sans-serif;">
-  <div style="max-width:600px;margin:0 auto;padding:40px 24px;">
-    <div style="border-bottom:1px solid rgba(212,168,83,0.3);padding-bottom:24px;margin-bottom:32px;">
-      <div style="font-family:Georgia,'Cormorant Garamond',serif;font-size:18px;color:#FAFAFA;letter-spacing:0.1em;font-weight:600;">
-        ZENITH RISE CAPITAL
-      </div>
-      <div style="height:1px;background:#D4A853;width:48px;margin:12px 0;"></div>
-      <div style="font-family:Consolas,monospace;font-size:11px;color:#D4A853;letter-spacing:0.15em;">
-        ZRC LABS · NEW VISOR LEAD
-      </div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;background:#111113;border:1px solid #27272A;">
-      <tr>
-        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;width:140px;">Email</td>
-        <td style="padding:8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#E8E8E8;"><strong style="color:#D4A853;">${escapeHTML(email)}</strong></td>
-      </tr>
-      <tr>
-        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Sector</td>
-        <td style="padding:8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#E8E8E8;">${escapeHTML(sector)}</td>
-      </tr>
-      <tr>
-        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Fuente</td>
-        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#E8E8E8;">${escapeHTML(source)}</td>
-      </tr>
-      ${rc ? `<tr>
-        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Última RC</td>
-        <td style="padding:8px 16px;font-family:Consolas,monospace;font-size:12px;color:#E8E8E8;">${escapeHTML(rc)}</td>
-      </tr>` : ""}
-      ${parcelaRows}
-    </table>
-    <div style="margin-top:24px;font-family:Consolas,monospace;font-size:10px;color:#71717A;">
-      Received: ${new Date().toISOString()} UTC · Reply directly to contact the lead
-    </div>
-  </div>
+<body style="margin:0;padding:0;background:#06080C;font-family:'EB Garamond',Georgia,serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#06080C;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:${NAVY};border-top:3px solid ${GOLD};">
+        <tr><td style="padding:32px 48px 24px;border-bottom:1px solid rgba(201,168,76,.2);">
+          <p style="margin:0 0 6px;font-family:'Cormorant SC',serif;font-size:9px;letter-spacing:.5em;color:rgba(201,168,76,.6);">ZENITH RISE CAPITAL</p>
+          <p style="margin:0;font-family:'Cormorant SC',serif;font-size:11px;letter-spacing:.3em;color:${GOLD};text-transform:uppercase;">Nuevo Lead - Visor Inmobiliario</p>
+        </td></tr>
+        <tr><td style="padding:32px 48px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0E1A2E;border:1px solid #1A2A40;">${rowsHtml}</table>
+          <p style="margin:20px 0 0;font-size:13px;color:#556677;font-style:italic;">Recibido: ${new Date().toISOString()} UTC - Responde directamente al lead</p>
+        </td></tr>
+        <tr><td style="padding:16px 48px;border-top:1px solid rgba(201,168,76,.15);">
+          <p style="margin:0;font-family:'Cormorant SC',serif;font-size:9px;letter-spacing:.25em;color:rgba(250,247,241,.2);">Uso interno - No distribuir fuera de ZRC</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
 </body>
 </html>`;
 }
@@ -131,39 +91,85 @@ function welcomeEmailHTML({ email, sector }) {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zenith Rise Capital — Bienvenido al Visor</title>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zenith Rise Capital</title>
+  <link href="${EMAIL_FONTS}" rel="stylesheet" />
 </head>
-<body style="margin:0;padding:0;background:#F5F3EE;color:#1A1A1A;font-family:Helvetica,Arial,sans-serif;">
-  <div style="max-width:560px;margin:40px auto;background:#FFFFFF;padding:40px;border-top:3px solid #D4A853;">
-    <div style="font-family:Consolas,monospace;font-size:10px;letter-spacing:0.2em;color:#D4A853;text-transform:uppercase;margin-bottom:16px;font-weight:600;">
-      ZENITH RISE CAPITAL · LABS
-    </div>
-    <div style="height:1px;background:#D4A853;width:48px;margin-bottom:24px;"></div>
-    <h1 style="font-family:Georgia,'Cormorant Garamond',serif;font-weight:400;font-size:28px;margin:0 0 16px;color:#0B1F3F;">
-      Bienvenido al Visor Inmobiliario
-    </h1>
-    <p style="font-size:15px;line-height:1.7;color:#404040;margin:0 0 16px;">
-      Gracias por registrarte. Tu acceso al modo demo del Visor está activo:
-      búsquedas ilimitadas por referencia catastral, capas de riesgo, alertas
-      regulatorias y matching con mandatos ZRC.
-    </p>
-    <p style="font-size:15px;line-height:1.7;color:#404040;margin:0 0 24px;">
-      También recibirás cada mes el informe <em>Zenrise State</em> con
-      indicadores macro y señales de mercado extraídas de nuestras herramientas.
-    </p>
-    <a href="https://zenithrisecapital.com" style="display:inline-block;padding:12px 28px;background:#0B1F3F;color:#FFFFFF;text-decoration:none;font-family:Consolas,monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;">
-      Volver al Visor
-    </a>
-    <div style="margin-top:32px;padding-top:20px;border-top:1px solid #E8E5DC;font-size:12px;color:#71717A;line-height:1.6;">
-      Zenith Rise Capital · Calesius Global S.L.<br>
-      Madrid · zenithrisecapital.com
-    </div>
-  </div>
+<body style="margin:0;padding:0;background:#E8E4DC;font-family:'EB Garamond',Georgia,serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#E8E4DC;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#FAF7F1;border-top:3px solid ${NAVY};box-shadow:0 2px 24px rgba(0,0,0,.10);">
+        <tr><td style="background:${NAVY};padding:36px 48px 28px;">
+          <p style="margin:0 0 8px;font-family:'Cormorant SC',serif;font-size:9px;font-weight:300;letter-spacing:.5em;color:rgba(201,168,76,.7);">ZRC Visor Inmobiliario</p>
+          <p style="margin:0 0 20px;font-family:'EB Garamond',serif;font-size:36px;font-style:italic;font-weight:400;color:#FAF7F1;line-height:1;letter-spacing:-.02em;">Zenith Rise Capital</p>
+          <div style="height:1px;background:rgba(201,168,76,.25);"></div>
+        </td></tr>
+        <tr><td style="padding:40px 48px;">
+          <p style="margin:0 0 24px;font-family:'Cormorant SC',serif;font-size:9px;letter-spacing:.4em;color:${GOLD};text-transform:uppercase;">Solicitud Recibida</p>
+          <p style="margin:0 0 20px;font-size:20px;color:${NAVY};line-height:1.4;">Gracias por su interes en el sector <strong style="font-weight:500;">${esc(sector)}</strong>.</p>
+          <p style="margin:0 0 20px;font-size:18px;color:#333;line-height:1.8;font-style:italic;">Hemos recibido su solicitud y nos pondremos en contacto en las proximas 24 a 48 horas con informacion relevante sobre oportunidades en este segmento.</p>
+          <p style="margin:0 0 32px;font-size:18px;color:#333;line-height:1.8;font-style:italic;">Para consultas urgentes puede escribirnos directamente a <a href="mailto:luis@zenithrisecapital.com" style="color:${GOLD};text-decoration:none;">luis@zenithrisecapital.com</a>.</p>
+          <div style="border-top:1px solid #E0D8C8;padding-top:24px;margin-top:8px;">
+            <p style="margin:0 0 4px;font-size:18px;color:${NAVY};font-weight:500;">Luis Miguel Gomez</p>
+            <p style="margin:0;font-family:'Cormorant SC',serif;font-size:9px;letter-spacing:.3em;color:#888;text-transform:uppercase;">Founder &amp; CIO - Zenith Rise Capital</p>
+          </div>
+        </td></tr>
+        <tr><td style="background:${NAVY2};padding:20px 48px;">
+          <p style="margin:0;font-family:'Cormorant SC',serif;font-size:9px;letter-spacing:.3em;color:rgba(250,247,241,.3);">Zenith Rise Capital &nbsp;&middot;&nbsp; Calesius Global SL</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
 </body>
 </html>`;
 }
+
+// ============================================================
+// ROUTE
+// ============================================================
+
+router.post("/", async (req, res) => {
+  try {
+    const { email, sector, source, rc, parcela } = req.body;
+
+    // Validation
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ error: "Email invalido" });
+    }
+    if (!sector || sector.length > 100) {
+      return res.status(400).json({ error: "Sector invalido" });
+    }
+
+    const rcClean = rc ? String(rc).replace(/[^a-zA-Z0-9\-]/g, "").substring(0, 12) : null;
+
+    const notifySubject = "ZRC Visor - Lead: " + sector + (rcClean ? " - RC " + rcClean : "");
+    const welcomeSubject = "Zenith Rise Capital - Solicitud recibida";
+
+    // Send internal notification
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [NOTIFY_EMAIL],
+      reply_to: email,
+      subject: notifySubject,
+      html: notifyEmailHTML({ email, sector, source, rc, parcela }),
+    });
+
+    // Send confirmation to user
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [email],
+      subject: welcomeSubject,
+      html: welcomeEmailHTML({ email, sector }),
+    });
+
+    res.json({ ok: true });
+
+  } catch (err) {
+    console.error("Lead route error:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
 
 module.exports = router;
