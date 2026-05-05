@@ -27,6 +27,7 @@ const subscribeRoute = require("./routes/subscribe");
 const sendBriefingRoute = require("./routes/send-briefing");
 const unsubscribeRoute = require("./routes/unsubscribe");
 const leadRoute = require("./routes/lead");
+const innerCircleRoute = require("./routes/inner-circle");
 
 app.get("/", (req, res) => res.json({ status: "ZRC API running" }));
 app.get("/health", (req, res) => res.json({ status: "ok" }));
@@ -36,6 +37,7 @@ app.use("/api/subscribe",    subscribeRoute);
 app.use("/api/send-briefing", sendBriefingRoute);
 app.use("/api/unsubscribe",  unsubscribeRoute);
 app.use("/api/lead",         leadRoute);
+app.use("/api/inner-circle", innerCircleRoute);
 
 // ============================================================
 // CONTACT FORM — /api/submit
